@@ -50,80 +50,84 @@ export interface EnquiryResponse {
   message: string;
 }
 
+export interface AvailabilitySearchParams {
+  checkIn: string;
+  checkOut: string;
+  adults: number;
+  children: number;
+  rooms: number;
+}
+
+export function searchAvailabilitySync(params: AvailabilitySearchParams): AvailabilitySearchResponse {
+  const anchor = getTodayLocalDateStr();
+  const bookedInventory = buildMockBookedInventory(anchor);
+  const nights = Math.max(1, diffNights(params.checkIn, params.checkOut));
+  const adultsPerRoom = Math.ceil(params.adults / Math.max(1, params.rooms));
+  const childrenPerRoom = Math.ceil(params.children / Math.max(1, params.rooms));
+
+  const offers: RoomSearchOffer[] = ROOMS.map((room) => {
+    const availability = checkRoomAvailability({
+      roomId: room.id,
+      totalInventory: room.totalInventory,
+      checkIn: params.checkIn,
+      checkOut: params.checkOut,
+      requestedRooms: params.rooms,
+      bookedInventory,
+    });
+
+    const capacityMet =
+      room.maxAdults >= adultsPerRoom &&
+      room.maxAdults + room.maxChildren >= adultsPerRoom + childrenPerRoom;
+
+    const pricingByPlan: Record<RatePlanId, StayPricingBreakdown> = {
+      flexible: calculateStayPricing({
+        baseNightlyRate: room.startingPriceInr,
+        ratePlan: 'flexible',
+        nights,
+        roomCount: params.rooms,
+      }),
+      'non-refundable': calculateStayPricing({
+        baseNightlyRate: room.startingPriceInr,
+        ratePlan: 'non-refundable',
+        nights,
+        roomCount: params.rooms,
+      }),
+      breakfast: calculateStayPricing({
+        baseNightlyRate: room.startingPriceInr,
+        ratePlan: 'breakfast',
+        nights,
+        roomCount: params.rooms,
+      }),
+    };
+
+    return {
+      room,
+      available: availability.available,
+      remainingRooms: availability.remainingRooms,
+      soldOutDates: availability.soldOutDates,
+      capacityMet,
+      pricingByPlan,
+    };
+  });
+
+  return {
+    checkIn: params.checkIn,
+    checkOut: params.checkOut,
+    nights,
+    adults: params.adults,
+    children: params.children,
+    roomsRequested: params.rooms,
+    offers,
+  };
+}
+
 /**
  * Service layer abstracting reservation & enquiry operations.
  * Replace the mock bodies with `fetch('/api/...')` calls when connecting a real PMS/backend.
  */
 export const bookingApi = {
-  async searchAvailability(params: {
-    checkIn: string;
-    checkOut: string;
-    adults: number;
-    children: number;
-    rooms: number;
-  }): Promise<AvailabilitySearchResponse> {
-    await new Promise((resolve) => setTimeout(resolve, 180));
-
-    const anchor = getTodayLocalDateStr();
-    const bookedInventory = buildMockBookedInventory(anchor);
-    const nights = Math.max(1, diffNights(params.checkIn, params.checkOut));
-    const adultsPerRoom = Math.ceil(params.adults / Math.max(1, params.rooms));
-    const childrenPerRoom = Math.ceil(params.children / Math.max(1, params.rooms));
-
-    const offers: RoomSearchOffer[] = ROOMS.map((room) => {
-      const availability = checkRoomAvailability({
-        roomId: room.id,
-        totalInventory: room.totalInventory,
-        checkIn: params.checkIn,
-        checkOut: params.checkOut,
-        requestedRooms: params.rooms,
-        bookedInventory,
-      });
-
-      const capacityMet =
-        room.maxAdults >= adultsPerRoom &&
-        room.maxAdults + room.maxChildren >= adultsPerRoom + childrenPerRoom;
-
-      const pricingByPlan: Record<RatePlanId, StayPricingBreakdown> = {
-        flexible: calculateStayPricing({
-          baseNightlyRate: room.startingPriceInr,
-          ratePlan: 'flexible',
-          nights,
-          roomCount: params.rooms,
-        }),
-        'non-refundable': calculateStayPricing({
-          baseNightlyRate: room.startingPriceInr,
-          ratePlan: 'non-refundable',
-          nights,
-          roomCount: params.rooms,
-        }),
-        breakfast: calculateStayPricing({
-          baseNightlyRate: room.startingPriceInr,
-          ratePlan: 'breakfast',
-          nights,
-          roomCount: params.rooms,
-        }),
-      };
-
-      return {
-        room,
-        available: availability.available,
-        remainingRooms: availability.remainingRooms,
-        soldOutDates: availability.soldOutDates,
-        capacityMet,
-        pricingByPlan,
-      };
-    });
-
-    return {
-      checkIn: params.checkIn,
-      checkOut: params.checkOut,
-      nights,
-      adults: params.adults,
-      children: params.children,
-      roomsRequested: params.rooms,
-      offers,
-    };
+  async searchAvailability(params: AvailabilitySearchParams): Promise<AvailabilitySearchResponse> {
+    return searchAvailabilitySync(params);
   },
 
   async createBooking(req: CreateBookingRequest): Promise<ConfirmedBooking> {

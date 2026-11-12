@@ -1,14 +1,35 @@
+import { useEffect } from 'react';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { ExternalLink, MapPin } from 'lucide-react';
 import { SectionEyebrow } from '../components/ActionButton';
-import { EnquirySection } from '../components/EnquirySection';
+import { ENQUIRY_EVENT_TYPES, EnquirySection } from '../components/EnquirySection';
 import { SITE } from '../data/site';
 import { usePageMeta } from '../lib/seo';
 
 export default function ContactPage() {
+  const [searchParams] = useSearchParams();
+  const { hash } = useLocation();
+
   usePageMeta({
     title: `Contact & Directions — ${SITE.hotelName}, ${SITE.city}`,
     description: `Reach ${SITE.hotelName} reservations, wedding concierge, and airport transfers at Fateh Sagar Promenade, ${SITE.city}.`,
   });
+
+  const requestedType = searchParams.get('eventType');
+  const requestedVenue = searchParams.get('venue');
+  const initialEventType =
+    requestedType && ENQUIRY_EVENT_TYPES.includes(requestedType)
+      ? requestedType
+      : 'Suite & Group Stay';
+  const initialMessage = requestedVenue
+    ? `Requesting a banquet proposal, availability, and floor plan for ${requestedVenue}.`
+    : '';
+
+  useEffect(() => {
+    if (hash === '#contact-enquiry') {
+      document.getElementById('contact-enquiry')?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [hash]);
 
   return (
     <div className="page-fade pt-16 md:pt-[72px]">
@@ -54,7 +75,8 @@ export default function ContactPage() {
 
       <EnquirySection
         id="contact-enquiry"
-        initialEventType="Suite & Group Stay"
+        initialEventType={initialEventType}
+        initialMessage={initialMessage}
         heading="Write to our Udaipur concierge."
       />
     </div>

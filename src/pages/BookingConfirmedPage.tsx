@@ -2,11 +2,11 @@ import { useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { CalendarPlus, CheckCircle2, MessageCircle } from 'lucide-react';
 import { ActionButton, SectionEyebrow } from '../components/ActionButton';
+import { PriceDisplay } from '../components/PriceDisplay';
 import { SITE } from '../data/site';
 import {
   buildWhatsAppBookingUrl,
   formatDisplayDate,
-  formatINR,
   generateBookingIcs,
   type ConfirmedBooking,
 } from '../lib/booking';
@@ -100,7 +100,7 @@ export default function BookingConfirmedPage() {
               <div className="text-right tabular-nums">
                 <span className="block text-xs text-[#5B6470]">Total Payable (incl. GST)</span>
                 <span className="font-serif text-2xl font-semibold text-[#0F2A43]">
-                  {formatINR(booking.pricing.totalAmount)}
+                  <PriceDisplay amount={booking.pricing.totalAmount} />
                 </span>
               </div>
             </div>
@@ -137,9 +137,9 @@ export default function BookingConfirmedPage() {
               <div>
                 <dt className="text-xs text-[#5B6470]">GST Breakdown</dt>
                 <dd className="font-medium text-[#1B1F24] mt-0.5">
-                  Subtotal {formatINR(booking.pricing.roomSubtotal)} +{' '}
+                  Subtotal <PriceDisplay amount={booking.pricing.roomSubtotal} /> +{' '}
                   {Math.round(booking.pricing.gstRate * 100)}% GST (
-                  {formatINR(booking.pricing.gstAmount)})
+                  <PriceDisplay amount={booking.pricing.gstAmount} />)
                 </dd>
               </div>
             </dl>

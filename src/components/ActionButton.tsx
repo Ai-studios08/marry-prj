@@ -26,19 +26,14 @@ const VARIANT_CLASSES: Record<Variant, string> = {
 function ButtonContent({ label, showArrow }: { label: string; showArrow?: boolean }) {
   return (
     <span className="relative z-10 inline-flex items-center justify-center gap-2.5 whitespace-nowrap">
-      <span className="btn-roll-wrap">
-        <span className="btn-roll-inner">
-          <span>{label}</span>
-          <span aria-hidden="true">{label}</span>
-        </span>
-      </span>
+      <span>{label}</span>
       {showArrow && <ArrowRight className="btn-arrow h-4 w-4 shrink-0" aria-hidden="true" />}
     </span>
   );
 }
 
 const BASE_CLASS =
-  'btn-motion inline-flex items-center justify-center h-12 px-6 rounded-[12px] text-[15px] font-medium tracking-[0.01em] whitespace-nowrap shrink-0 cursor-pointer select-none disabled:opacity-50 disabled:pointer-events-none';
+  'btn-motion relative overflow-hidden inline-flex items-center justify-center h-12 px-6 rounded-[12px] text-[15px] font-medium tracking-[0.01em] whitespace-nowrap shrink-0 cursor-pointer select-none disabled:opacity-50 disabled:pointer-events-none';
 
 type ButtonAsButton = BaseProps &
   Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> & {

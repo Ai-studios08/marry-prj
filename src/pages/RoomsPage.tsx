@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ActionButton, SectionEyebrow } from '../components/ActionButton';
 import { MediaImage } from '../components/MediaImage';
+import { PriceDisplay } from '../components/PriceDisplay';
 import { ROOMS } from '../data/rooms';
 import { SITE } from '../data/site';
-import { formatINR } from '../lib/booking';
 import { usePageMeta } from '../lib/seo';
 
 type FilterGroup = 'All' | 'Rooms' | 'Suites & Pavilions';
@@ -101,8 +101,8 @@ export default function RoomsPage() {
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
                     <span className="text-xs text-[#5B6470] block">Starting tariff</span>
-                    <span className="font-serif text-2xl font-medium text-[#0F2A43] tabular-nums">
-                      {formatINR(room.startingPriceInr)}
+                    <span className="font-serif text-2xl font-medium text-[#0F2A43]">
+                      <PriceDisplay amount={room.startingPriceInr} />
                     </span>
                     <span className="text-xs text-[#5B6470]"> / night + GST</span>
                   </div>

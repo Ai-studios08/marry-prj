@@ -92,6 +92,12 @@ export function formatDisplayDate(dateStr: string): string {
   });
 }
 
+export function formatINRNumber(amount: number): string {
+  return new Intl.NumberFormat('en-IN', {
+    maximumFractionDigits: 0,
+  }).format(Math.round(amount));
+}
+
 export function formatINR(amount: number): string {
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',

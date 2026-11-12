@@ -13,20 +13,18 @@ export default function VenuesPage() {
       'Grand indoor banquet halls, lakeside wedding lawns, sunset terraces, and executive salons in Udaipur for 30 to 850 guests.',
   });
 
-  const scrollToEnquiry = () => {
-    document.getElementById('venues-enquiry')?.scrollIntoView({ behavior: 'smooth' });
-  };
-
   return (
     <div className="page-fade pt-16 md:pt-[72px]">
       <section className="py-14 md:py-20 border-b border-[#E7E2D9]">
-        <div className="mx-auto max-w-[1200px] px-4 md:px-6 space-y-5 max-w-[70ch]">
-          <SectionEyebrow>Banquets &amp; Celebrations</SectionEyebrow>
-          <h1 className="type-h1 text-[#0F2A43]">Venues for Weddings, Galas &amp; Summits</h1>
-          <p className="text-base text-[#5B6470] leading-relaxed">
-            Four interconnected indoor halls, open lawns, and rooftop terraces engineered for
-            effortless ceremony flow, royal hospitality, and full-estate buyouts in Udaipur.
-          </p>
+        <div className="mx-auto max-w-[1200px] px-4 md:px-6">
+          <div className="space-y-5 max-w-[70ch]">
+            <SectionEyebrow>Banquets &amp; Celebrations</SectionEyebrow>
+            <h1 className="type-h1 text-[#0F2A43]">Venues for Weddings, Galas &amp; Summits</h1>
+            <p className="text-base text-[#5B6470] leading-relaxed">
+              Four interconnected indoor halls, open lawns, and rooftop terraces engineered for
+              effortless ceremony flow, royal hospitality, and full-estate buyouts in Udaipur.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -71,7 +69,9 @@ export default function VenuesPage() {
                     variant="primary"
                     label="Request Banquet Proposal"
                     showArrow
-                    onClick={scrollToEnquiry}
+                    to={`/contact?eventType=${encodeURIComponent(
+                      'Private Banquet'
+                    )}&venue=${encodeURIComponent(venue.name)}#contact-enquiry`}
                   />
                 </div>
               </div>

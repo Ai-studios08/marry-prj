@@ -6,18 +6,40 @@ import { SITE } from '../data/site';
 export function Footer() {
   const { pathname } = useLocation();
   const isHome = pathname === '/';
-  const [pastHero, setPastHero] = useState(!isHome);
+  const [showFloatingWhatsapp, setShowFloatingWhatsapp] = useState(!isHome);
 
   useEffect(() => {
-    if (!isHome) {
-      setPastHero(true);
-      return;
-    }
-    const update = () => setPastHero(window.scrollY > 260);
-    update();
-    window.addEventListener('scroll', update, { passive: true });
-    return () => window.removeEventListener('scroll', update);
-  }, [isHome]);
+    const computeVisibility = () => {
+      if (isHome && window.scrollY <= 260) {
+        setShowFloatingWhatsapp(false);
+        return;
+      }
+
+      const rateBox = document.getElementById('room-rate-box');
+      if (rateBox) {
+        const rect = rateBox.getBoundingClientRect();
+        const widgetLeft = window.innerWidth - 180;
+        const widgetTop = window.innerHeight - 88;
+        const overlapsRateBox =
+          rect.right > widgetLeft &&
+          rect.bottom > widgetTop &&
+          rect.top < window.innerHeight - 8;
+        setShowFloatingWhatsapp(!overlapsRateBox);
+        return;
+      }
+
+      setShowFloatingWhatsapp(true);
+    };
+
+    const rafId = window.requestAnimationFrame(computeVisibility);
+    window.addEventListener('scroll', computeVisibility, { passive: true });
+    window.addEventListener('resize', computeVisibility, { passive: true });
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      window.removeEventListener('scroll', computeVisibility);
+      window.removeEventListener('resize', computeVisibility);
+    };
+  }, [isHome, pathname]);
 
   const whatsappUrl = `https://wa.me/${SITE.whatsappNumber}?text=${encodeURIComponent(
     SITE.whatsappPrefill
@@ -165,10 +187,10 @@ export function Footer() {
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Chat on WhatsApp with Concierge"
-        tabIndex={pastHero ? 0 : -1}
-        aria-hidden={!pastHero}
+        tabIndex={showFloatingWhatsapp ? 0 : -1}
+        aria-hidden={!showFloatingWhatsapp}
         className={`fixed bottom-4 right-4 z-30 inline-flex h-12 w-12 md:w-auto md:px-4 items-center justify-center gap-2 rounded-full bg-[#2E7D5B] text-white shadow-lg border border-white/20 hover:bg-[#25674b] transition-[transform,opacity] duration-200 ${
-          pastHero
+          showFloatingWhatsapp
             ? 'opacity-100 translate-y-0 pointer-events-auto'
             : 'opacity-0 translate-y-3 pointer-events-none'
         }`}

@@ -2,9 +2,10 @@ import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Check } from 'lucide-react';
 import { ActionButton, SectionEyebrow } from '../components/ActionButton';
 import { MediaImage } from '../components/MediaImage';
+import { PriceDisplay } from '../components/PriceDisplay';
 import { getRoomBySlug } from '../data/rooms';
 import { SITE } from '../data/site';
-import { formatINR, getGstRateForNightlyTariff } from '../lib/booking';
+import { getGstRateForNightlyTariff } from '../lib/booking';
 import { usePageMeta } from '../lib/seo';
 
 export default function RoomDetailPage() {
@@ -41,7 +42,7 @@ export default function RoomDetailPage() {
 
   return (
     <div className="page-fade pt-16 md:pt-[72px]">
-      <section className="py-10 md:py-16">
+      <section className="pt-10 pb-24 md:pt-16 md:pb-28">
         <div className="mx-auto max-w-[1200px] px-4 md:px-6 space-y-8">
           <Link
             to="/rooms"
@@ -64,7 +65,10 @@ export default function RoomDetailPage() {
 
               <div className="grid grid-cols-3 gap-4">
                 {room.gallery.map((img, i) => (
-                  <div key={i} className="overflow-hidden rounded-[12px] border border-[#E7E2D9]">
+                  <div
+                    key={`${room.id}-gallery-${i}`}
+                    className="overflow-hidden rounded-[12px] border border-[#E7E2D9]"
+                  >
                     <MediaImage
                       asset={img}
                       sizes="220px"
@@ -75,7 +79,7 @@ export default function RoomDetailPage() {
               </div>
             </div>
 
-            <div className="lg:col-span-5 space-y-6 rounded-[16px] bg-white border border-[#E7E2D9] p-6 md:p-8 shadow-sm">
+            <div className="lg:col-span-5 space-y-6 rounded-[16px] bg-white border border-[#E7E2D9] p-6 md:p-8 shadow-sm min-w-0">
               <div className="space-y-2">
                 <SectionEyebrow>{room.categoryLabel}</SectionEyebrow>
                 <h1 className="type-h2 text-[#0F2A43]">{room.name}</h1>
@@ -117,14 +121,14 @@ export default function RoomDetailPage() {
                 </ul>
               </div>
 
-              <div className="pt-4 border-t border-[#E7E2D9] space-y-4">
-                <div className="flex items-baseline justify-between">
+              <div id="room-rate-box" className="pt-4 border-t border-[#E7E2D9] space-y-4">
+                <div className="rounded-[12px] bg-[#FAF7F2] border border-[#E7E2D9] p-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
                   <span className="text-sm text-[#5B6470]">Starting flexible rate</span>
-                  <div className="text-right tabular-nums">
+                  <div className="text-right tabular-nums min-w-0">
                     <span className="font-serif text-2xl font-medium text-[#0F2A43]">
-                      {formatINR(room.startingPriceInr)}
+                      <PriceDisplay amount={room.startingPriceInr} />
                     </span>
-                    <span className="text-xs text-[#5B6470] block">
+                    <span className="text-xs text-[#5B6470] block mt-0.5">
                       per night + {gstPercent}% GST
                     </span>
                   </div>

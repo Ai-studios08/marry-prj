@@ -6,6 +6,7 @@ import {
   checkRoomAvailability,
   diffNights,
   formatINR,
+  formatINRNumber,
   generateBookingIcs,
   getGstRateForNightlyTariff,
   getHotelSoldOutDates,
@@ -136,6 +137,8 @@ describe('GST tariff slabs and pricing calculation', () => {
   it('formats INR currency with Indian digit grouping', () => {
     expect(formatINR(18500)).toContain('18,500');
     expect(formatINR(125000)).toContain('1,25,000');
+    expect(formatINRNumber(6800)).toBe('6,800');
+    expect(formatINRNumber(125000)).toBe('1,25,000');
   });
 });
 

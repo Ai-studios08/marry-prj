@@ -4,6 +4,7 @@ import { ArrowLeft, Check, ShieldCheck } from 'lucide-react';
 import { ActionButton, SectionEyebrow } from '../components/ActionButton';
 import { DateRangePicker } from '../components/DateRangePicker';
 import { MediaImage } from '../components/MediaImage';
+import { PriceDisplay } from '../components/PriceDisplay';
 import { ROOMS } from '../data/rooms';
 import { SITE } from '../data/site';
 import {
@@ -11,7 +12,6 @@ import {
   buildMockBookedInventory,
   diffNights,
   formatDisplayDate,
-  formatINR,
   getHotelSoldOutDates,
   getTodayLocalDateStr,
   RATE_PLANS,
@@ -21,7 +21,7 @@ import {
   type RatePlanId,
 } from '../lib/booking';
 import { usePageMeta } from '../lib/seo';
-import { bookingApi, type AvailabilitySearchResponse } from '../services/api';
+import { bookingApi, searchAvailabilitySync } from '../services/api';
 
 const DRAFT_STORAGE_KEY = 'rajvansh_booking_draft';
 
@@ -95,9 +95,6 @@ export default function BookingPage() {
     checkOut?: string;
     guests?: string;
   }>({});
-  const [availabilityLoading, setAvailabilityLoading] = useState(false);
-  const [availabilityError, setAvailabilityError] = useState<string | null>(null);
-  const [availability, setAvailability] = useState<AvailabilitySearchResponse | null>(null);
 
   const [guestErrors, setGuestErrors] = useState<
     Partial<Record<keyof GuestDetailsInput, string>>
@@ -119,50 +116,45 @@ export default function BookingPage() {
     }
   }, [draft]);
 
-  // Load availability automatically when entering Step 2 or Step 3
-  useEffect(() => {
-    if (draft.step < 2) return;
-    const validation = validateSearchParams({
-      checkIn: draft.checkIn,
-      checkOut: draft.checkOut,
-      adults: draft.adults,
-      children: draft.children,
-      rooms: draft.rooms,
-      today,
-    });
-    if (!validation.valid) {
-      setDraft((prev) => ({ ...prev, step: 1 }));
-      setSearchErrors(validation.errors);
-      return;
-    }
-
-    let cancelled = false;
-    setAvailabilityLoading(true);
-    setAvailabilityError(null);
-    bookingApi
-      .searchAvailability({
+  const stepSearchValidation = useMemo(
+    () =>
+      validateSearchParams({
         checkIn: draft.checkIn,
         checkOut: draft.checkOut,
         adults: draft.adults,
         children: draft.children,
         rooms: draft.rooms,
-      })
-      .then((res) => {
-        if (!cancelled) setAvailability(res);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setAvailabilityError('Could not load suite availability. Please retry.');
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setAvailabilityLoading(false);
-      });
+        today,
+      }),
+    [draft.checkIn, draft.checkOut, draft.adults, draft.children, draft.rooms, today]
+  );
 
-    return () => {
-      cancelled = true;
-    };
-  }, [draft.step, draft.checkIn, draft.checkOut, draft.adults, draft.children, draft.rooms, today]);
+  // Redirect back to Step 1 if URL/stored search params on Step >= 2 are invalid
+  useEffect(() => {
+    if (draft.step >= 2 && !stepSearchValidation.valid) {
+      setSearchErrors(stepSearchValidation.errors);
+      setDraft((prev) => ({ ...prev, step: 1 }));
+    }
+  }, [draft.step, stepSearchValidation]);
+
+  // Compute availability synchronously so Step 2 renders immediately with zero placeholder flash
+  const availability = useMemo(() => {
+    if (!stepSearchValidation.valid) return null;
+    return searchAvailabilitySync({
+      checkIn: draft.checkIn,
+      checkOut: draft.checkOut,
+      adults: draft.adults,
+      children: draft.children,
+      rooms: draft.rooms,
+    });
+  }, [
+    stepSearchValidation.valid,
+    draft.checkIn,
+    draft.checkOut,
+    draft.adults,
+    draft.children,
+    draft.rooms,
+  ]);
 
   const handleStep1Submit = (e: FormEvent) => {
     e.preventDefault();
@@ -472,53 +464,25 @@ export default function BookingPage() {
                 </button>
               </div>
 
-              {availabilityLoading && (
-                <div className="space-y-6" aria-busy="true" aria-label="Loading suite availability">
-                  {[1, 2, 3].map((k) => (
-                    <div
-                      key={k}
-                      className="h-56 rounded-[16px] bg-white border border-[#E7E2D9] animate-pulse"
-                    />
-                  ))}
-                </div>
-              )}
-
-              {availabilityError && (
-                <div
-                  role="alert"
-                  className="rounded-[16px] bg-white border border-[#C0392B]/40 p-6 space-y-4"
-                >
-                  <p className="text-base text-[#C0392B] font-medium">{availabilityError}</p>
+              {availability && availability.offers.every((o) => !o.available) && (
+                <div className="rounded-[16px] bg-white border border-[#E7E2D9] p-8 text-center space-y-4">
+                  <h2 className="type-h3 text-[#0F2A43]">
+                    Selected Dates Are Fully Reserved
+                  </h2>
+                  <p className="text-base text-[#5B6470] max-w-[54ch] mx-auto">
+                    All twenty-eight suites are reserved for at least one night in your selected
+                    window. Try shifting dates by one day or enquire directly for waitlist
+                    priority.
+                  </p>
                   <ActionButton
                     variant="primary"
-                    label="Retry Search"
+                    label="Choose Different Dates"
                     onClick={() => setDraft((prev) => ({ ...prev, step: 1 }))}
                   />
                 </div>
               )}
 
-              {!availabilityLoading &&
-                !availabilityError &&
-                availability &&
-                availability.offers.every((o) => !o.available) && (
-                  <div className="rounded-[16px] bg-white border border-[#E7E2D9] p-8 text-center space-y-4">
-                    <h2 className="type-h3 text-[#0F2A43]">
-                      Selected Dates Are Fully Reserved
-                    </h2>
-                    <p className="text-base text-[#5B6470] max-w-[54ch] mx-auto">
-                      All twenty-eight suites are reserved for at least one night in your selected
-                      window. Try shifting dates by one day or enquire directly for waitlist
-                      priority.
-                    </p>
-                    <ActionButton
-                      variant="primary"
-                      label="Choose Different Dates"
-                      onClick={() => setDraft((prev) => ({ ...prev, step: 1 }))}
-                    />
-                  </div>
-                )}
-
-              {!availabilityLoading && !availabilityError && availability && (
+              {availability && (
                 <div className="space-y-6">
                   {availability.offers.map((offer) => {
                     const isSelectedRoom = draft.selectedRoomId === offer.room.id;
@@ -604,9 +568,9 @@ export default function BookingPage() {
                                           {plan.shortTag}
                                         </p>
                                       </div>
-                                      <div className="pt-2 border-t border-[#E7E2D9]/80 tabular-nums">
+                                      <div className="pt-2 border-t border-[#E7E2D9]/80">
                                         <span className="font-serif text-lg font-medium text-[#0F2A43]">
-                                          {formatINR(pricing.effectiveNightlyPerRoom)}
+                                          <PriceDisplay amount={pricing.effectiveNightlyPerRoom} />
                                         </span>
                                         <span className="text-xs text-[#5B6470]"> / night</span>
                                       </div>
@@ -624,18 +588,18 @@ export default function BookingPage() {
                                     Room subtotal ({draft.rooms} × {availability.nights} night
                                     {availability.nights > 1 ? 's' : ''}):{' '}
                                     <strong className="text-[#1B1F24]">
-                                      {formatINR(activePlanPricing.roomSubtotal)}
+                                      <PriceDisplay amount={activePlanPricing.roomSubtotal} />
                                     </strong>
                                   </p>
                                   <p>
                                     GST ({gstPercent}% slab):{' '}
                                     <strong className="text-[#1B1F24]">
-                                      {formatINR(activePlanPricing.gstAmount)}
+                                      <PriceDisplay amount={activePlanPricing.gstAmount} />
                                     </strong>
                                     <span className="mx-2" aria-hidden="true">·</span>
                                     Total:{' '}
                                     <strong className="text-[#0F2A43] text-sm">
-                                      {formatINR(activePlanPricing.totalAmount)}
+                                      <PriceDisplay amount={activePlanPricing.totalAmount} />
                                     </strong>
                                   </p>
                                 </div>
@@ -882,11 +846,11 @@ export default function BookingPage() {
                   </div>
                   <div className="flex justify-between pt-3 border-t border-[#E7E2D9]">
                     <dt className="text-[#5B6470]">
-                      {formatINR(selectedPricing.effectiveNightlyPerRoom)} × {selectedPricing.nights}{' '}
-                      nights × {selectedPricing.roomCount} room
+                      <PriceDisplay amount={selectedPricing.effectiveNightlyPerRoom} /> ×{' '}
+                      {selectedPricing.nights} nights × {selectedPricing.roomCount} room
                     </dt>
                     <dd className="font-medium text-[#1B1F24]">
-                      {formatINR(selectedPricing.roomSubtotal)}
+                      <PriceDisplay amount={selectedPricing.roomSubtotal} />
                     </dd>
                   </div>
                   <div className="flex justify-between">
@@ -894,13 +858,13 @@ export default function BookingPage() {
                       Taxes (GST {Math.round(selectedPricing.gstRate * 100)}%)
                     </dt>
                     <dd className="font-medium text-[#1B1F24]">
-                      {formatINR(selectedPricing.gstAmount)}
+                      <PriceDisplay amount={selectedPricing.gstAmount} />
                     </dd>
                   </div>
                   <div className="flex justify-between pt-3 border-t border-[#E7E2D9] text-base">
                     <dt className="font-semibold text-[#0F2A43]">Total Payable</dt>
                     <dd className="font-serif text-2xl font-semibold text-[#0F2A43]">
-                      {formatINR(selectedPricing.totalAmount)}
+                      <PriceDisplay amount={selectedPricing.totalAmount} />
                     </dd>
                   </div>
                 </dl>

@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowDown,
@@ -11,6 +11,7 @@ import {
 import { ActionButton, SectionEyebrow } from '../components/ActionButton';
 import { EnquirySection } from '../components/EnquirySection';
 import { MediaImage } from '../components/MediaImage';
+import { PriceDisplay } from '../components/PriceDisplay';
 import { Reveal } from '../components/Reveal';
 import { EXPERIENCES } from '../data/experiences';
 import { MEDIA } from '../data/media';
@@ -20,7 +21,6 @@ import { SITE } from '../data/site';
 import { VENUES } from '../data/venues';
 import {
   addDays,
-  formatINR,
   getTodayLocalDateStr,
   validateSearchParams,
 } from '../lib/booking';
@@ -44,7 +44,17 @@ export default function HomePage() {
 
   // Rooms carousel state
   const roomsTrackRef = useRef<HTMLDivElement | null>(null);
+  const isProgrammaticRoomsScrollRef = useRef(false);
+  const roomsScrollTimerRef = useRef<number | null>(null);
   const [activeRoomIndex, setActiveRoomIndex] = useState(0);
+
+  useEffect(() => {
+    return () => {
+      if (roomsScrollTimerRef.current !== null) {
+        window.clearTimeout(roomsScrollTimerRef.current);
+      }
+    };
+  }, []);
 
   // Experiences hover/active crossfade state (desktop)
   const [activeExpIndex, setActiveExpIndex] = useState(0);
@@ -109,27 +119,27 @@ export default function HomePage() {
     if (!track) return;
     const nextIdx = Math.max(0, Math.min(ROOMS.length - 1, activeRoomIndex + direction));
     setActiveRoomIndex(nextIdx);
-    const child = track.children[nextIdx] as HTMLElement | undefined;
-    if (child) {
-      track.scrollTo({ left: child.offsetLeft - track.offsetLeft, behavior: 'smooth' });
+    isProgrammaticRoomsScrollRef.current = true;
+    if (roomsScrollTimerRef.current !== null) {
+      window.clearTimeout(roomsScrollTimerRef.current);
     }
+    roomsScrollTimerRef.current = window.setTimeout(() => {
+      isProgrammaticRoomsScrollRef.current = false;
+    }, 550);
+
+    const maxScroll = Math.max(0, track.scrollWidth - track.clientWidth);
+    const targetLeft = ROOMS.length > 1 ? (nextIdx / (ROOMS.length - 1)) * maxScroll : 0;
+    track.scrollTo({ left: targetLeft, behavior: 'smooth' });
   };
 
   const handleRoomsScroll = () => {
+    if (isProgrammaticRoomsScrollRef.current) return;
     const track = roomsTrackRef.current;
     if (!track) return;
-    const scrollLeft = track.scrollLeft;
-    let closest = 0;
-    let minDiff = Infinity;
-    Array.from(track.children).forEach((child, idx) => {
-      const el = child as HTMLElement;
-      const diff = Math.abs(el.offsetLeft - track.offsetLeft - scrollLeft);
-      if (diff < minDiff) {
-        minDiff = diff;
-        closest = idx;
-      }
-    });
-    setActiveRoomIndex(closest);
+    const maxScroll = track.scrollWidth - track.clientWidth;
+    if (maxScroll <= 0) return;
+    const ratio = Math.max(0, Math.min(1, track.scrollLeft / maxScroll));
+    setActiveRoomIndex(Math.round(ratio * (ROOMS.length - 1)));
   };
 
   const scrollReviewsBy = (direction: -1 | 1) => {
@@ -412,7 +422,7 @@ export default function HomePage() {
             role="region"
             aria-roledescription="carousel"
             aria-label="Rooms and Suites showcase"
-            className="no-scrollbar flex gap-6 overflow-x-auto snap-x snap-mandatory pb-4"
+            className="no-scrollbar flex gap-6 overflow-x-auto snap-x snap-proximity pb-4"
           >
             {ROOMS.map((room) => (
               <article
@@ -440,8 +450,8 @@ export default function HomePage() {
                   <div className="pt-4 border-t border-[#E7E2D9] flex items-center justify-between gap-3">
                     <div>
                       <span className="block text-xs text-[#5B6470]">From</span>
-                      <span className="font-serif text-xl font-medium text-[#0F2A43] tabular-nums">
-                        {formatINR(room.startingPriceInr)}
+                      <span className="font-serif text-xl font-medium text-[#0F2A43]">
+                        <PriceDisplay amount={room.startingPriceInr} />
                       </span>
                       <span className="text-xs text-[#5B6470]"> / night</span>
                     </div>
@@ -722,7 +732,7 @@ export default function HomePage() {
                     >
                       {Array.from({ length: review.rating }).map((_, i) => (
                         <Star
-                          key={i}
+                          key={`${review.id}-star-${i}`}
                           className="h-4 w-4 fill-[#C8963E] text-[#C8963E]"
                           aria-hidden="true"
                         />

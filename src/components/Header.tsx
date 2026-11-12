@@ -220,7 +220,7 @@ export function Header() {
           <div className="flex items-center gap-3 shrink-0">
             <Link
               to="/book"
-              className="btn-motion btn-gold-shimmer hidden sm:inline-flex items-center justify-center h-11 md:h-12 px-5 md:px-6 rounded-[12px] bg-[#C8963E] text-[#0F2A43] text-[14px] md:text-[15px] font-semibold whitespace-nowrap shrink-0"
+              className="btn-motion btn-gold-shimmer relative overflow-hidden hidden sm:inline-flex items-center justify-center h-11 md:h-12 px-5 md:px-6 rounded-[12px] bg-[#C8963E] text-[#0F2A43] text-[14px] md:text-[15px] font-semibold whitespace-nowrap shrink-0"
             >
               <span className="relative z-10">Book Now</span>
             </Link>

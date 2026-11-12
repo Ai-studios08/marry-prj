@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { CheckCircle2, Mail, MapPin, Phone } from 'lucide-react';
 import { SITE } from '../data/site';
 import {
@@ -12,10 +12,11 @@ import { ActionButton, SectionEyebrow } from './ActionButton';
 interface EnquirySectionProps {
   id?: string;
   initialEventType?: string;
+  initialMessage?: string;
   heading?: string;
 }
 
-const EVENT_TYPES = [
+export const ENQUIRY_EVENT_TYPES = [
   'Wedding Celebration',
   'Private Banquet',
   'Corporate Retreat',
@@ -26,6 +27,7 @@ const EVENT_TYPES = [
 export function EnquirySection({
   id = 'enquiry',
   initialEventType = 'Wedding Celebration',
+  initialMessage = '',
   heading = 'Plan a celebration or bespoke stay.',
 }: EnquirySectionProps) {
   const [form, setForm] = useState<EnquiryFormInput>({
@@ -34,12 +36,20 @@ export function EnquirySection({
     phone: '',
     eventDate: '',
     eventType: initialEventType,
-    message: '',
+    message: initialMessage,
   });
   const [errors, setErrors] = useState<Partial<Record<keyof EnquiryFormInput, string>>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState<EnquiryResponse | null>(null);
+
+  useEffect(() => {
+    setForm((prev) => ({
+      ...prev,
+      eventType: initialEventType,
+      message: initialMessage || prev.message,
+    }));
+  }, [initialEventType, initialMessage]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -254,7 +264,7 @@ export function EnquirySection({
                         aria-invalid={Boolean(errors.eventType)}
                         className="h-12 w-full rounded-[12px] border border-[#E7E2D9] bg-[#FAF7F2]/60 px-3 text-base text-[#1B1F24] focus:border-[#0F2A43] focus:bg-white"
                       >
-                        {EVENT_TYPES.map((type) => (
+                        {ENQUIRY_EVENT_TYPES.map((type) => (
                           <option key={type} value={type}>
                             {type}
                           </option>

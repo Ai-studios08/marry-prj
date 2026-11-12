@@ -15,13 +15,15 @@ export default function ExperiencesPage() {
   return (
     <div className="page-fade pt-16 md:pt-[72px]">
       <section className="py-14 md:py-20 border-b border-[#E7E2D9]">
-        <div className="mx-auto max-w-[1200px] px-4 md:px-6 space-y-5 max-w-[70ch]">
-          <SectionEyebrow>Experiences</SectionEyebrow>
-          <h1 className="type-h1 text-[#0F2A43]">Dining, Soma Ayurveda &amp; Courtyard Life</h1>
-          <p className="text-base text-[#5B6470] leading-relaxed">
-            Every stay unfolds at the unhurried rhythm of Udaipur—from slow-simmered royal
-            kitchens to stone-vaulted wellness rituals.
-          </p>
+        <div className="mx-auto max-w-[1200px] px-4 md:px-6">
+          <div className="space-y-5 max-w-[70ch]">
+            <SectionEyebrow>Experiences</SectionEyebrow>
+            <h1 className="type-h1 text-[#0F2A43]">Dining, Soma Ayurveda &amp; Courtyard Life</h1>
+            <p className="text-base text-[#5B6470] leading-relaxed">
+              Every stay unfolds at the unhurried rhythm of Udaipur—from slow-simmered royal
+              kitchens to stone-vaulted wellness rituals.
+            </p>
+          </div>
         </div>
       </section>
 
