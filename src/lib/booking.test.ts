@@ -28,6 +28,8 @@ describe('Local calendar date helpers', () => {
   it('rejects impossible calendar dates like Feb 30', () => {
     expect(parseLocalDate('2026-02-30')).toBeNull();
     expect(parseLocalDate('not-a-date')).toBeNull();
+    expect(parseLocalDate(null as unknown as string)).toBeNull();
+    expect(parseLocalDate(undefined as unknown as string)).toBeNull();
   });
 
   it('computes exact night difference and adds days cleanly across month boundaries', () => {

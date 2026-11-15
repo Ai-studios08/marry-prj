@@ -58,22 +58,48 @@ function getDefaultDraft(searchParams: URLSearchParams): BookingDraft {
   const adults = paramAdults ? Number(paramAdults) : stored?.adults ?? 2;
   const rooms = paramRooms ? Number(paramRooms) : stored?.rooms ?? 1;
 
+  const validRoomIds = new Set(ROOMS.map((r) => r.id));
+  const rawRoomId = paramRoomId ?? stored?.selectedRoomId;
+  const selectedRoomId = rawRoomId && validRoomIds.has(rawRoomId) ? rawRoomId : ROOMS[0].id;
+
+  const validRatePlans = new Set<RatePlanId>(RATE_PLANS.map((p) => p.id));
+  const ratePlan =
+    stored?.ratePlan && validRatePlans.has(stored.ratePlan as RatePlanId)
+      ? (stored.ratePlan as RatePlanId)
+      : 'flexible';
+
+  const rawStep = paramCheckIn && paramCheckOut ? 2 : stored?.step ?? 1;
+  const step = rawStep === 1 || rawStep === 2 || rawStep === 3 ? rawStep : 1;
+
   return {
-    step: paramCheckIn && paramCheckOut ? 2 : stored?.step ?? 1,
+    step,
     checkIn,
     checkOut,
     adults: Number.isFinite(adults) && adults >= 1 ? adults : 2,
-    children: stored?.children ?? 0,
+    children:
+      typeof stored?.children === 'number' && Number.isFinite(stored.children) && stored.children >= 0
+        ? stored.children
+        : 0,
     rooms: Number.isFinite(rooms) && rooms >= 1 ? rooms : 1,
-    selectedRoomId: paramRoomId ?? stored?.selectedRoomId ?? ROOMS[0].id,
-    ratePlan: stored?.ratePlan ?? 'flexible',
-    guest: stored?.guest ?? {
-      fullName: '',
-      email: '',
-      phone: '',
-      specialRequests: '',
-      acceptedTerms: false,
-    },
+    selectedRoomId,
+    ratePlan,
+    guest:
+      stored?.guest && typeof stored.guest === 'object'
+        ? {
+            fullName: typeof stored.guest.fullName === 'string' ? stored.guest.fullName : '',
+            email: typeof stored.guest.email === 'string' ? stored.guest.email : '',
+            phone: typeof stored.guest.phone === 'string' ? stored.guest.phone : '',
+            specialRequests:
+              typeof stored.guest.specialRequests === 'string' ? stored.guest.specialRequests : '',
+            acceptedTerms: Boolean(stored.guest.acceptedTerms),
+          }
+        : {
+            fullName: '',
+            email: '',
+            phone: '',
+            specialRequests: '',
+            acceptedTerms: false,
+          },
   };
 }
 

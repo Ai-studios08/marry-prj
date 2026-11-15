@@ -57,7 +57,8 @@ export default function BookingConfirmedPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${booking.reference}.ics`;
+    const safeRef = booking.reference.replace(/[^a-zA-Z0-9_-]/g, '_');
+    link.download = `${safeRef}.ics`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
