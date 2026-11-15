@@ -39,6 +39,7 @@ export const NON_REFUNDABLE_DISCOUNT = 0.15;
 const DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 export function parseLocalDate(dateStr: string): Date | null {
+  if (typeof dateStr !== 'string') return null;
   const match = DATE_RE.exec(dateStr.trim());
   if (!match) return null;
   const year = Number(match[1]);
@@ -434,6 +435,10 @@ export function generateBookingReference(seedStr: string): string {
   return `RVC-${year}-${code}`;
 }
 
+function sanitizeIcsLine(str: string): string {
+  return str.replace(/[\r\n]+/g, ' ').trim();
+}
+
 export function generateBookingIcs(
   booking: ConfirmedBooking,
   hotelName: string,
@@ -441,8 +446,9 @@ export function generateBookingIcs(
 ): string {
   const dtStart = booking.checkIn.replace(/-/g, '');
   const dtEnd = booking.checkOut.replace(/-/g, '');
-  const uid = `${booking.reference}@rajvanshcourtyard.example`;
-  const summary = `Stay at ${hotelName} — ${booking.roomName}`;
+  const uid = sanitizeIcsLine(`${booking.reference}@rajvanshcourtyard.example`);
+  const summary = sanitizeIcsLine(`Stay at ${hotelName} — ${booking.roomName}`);
+  const location = sanitizeIcsLine(hotelAddress);
   const description = [
     `Booking Reference: ${booking.reference}`,
     `Suite: ${booking.roomName} (${booking.rooms} room${booking.rooms > 1 ? 's' : ''})`,
@@ -462,7 +468,7 @@ export function generateBookingIcs(
     `DTSTART;VALUE=DATE:${dtStart}`,
     `DTEND;VALUE=DATE:${dtEnd}`,
     `SUMMARY:${summary}`,
-    `LOCATION:${hotelAddress}`,
+    `LOCATION:${location}`,
     `DESCRIPTION:${description}`,
     'END:VEVENT',
     'END:VCALENDAR',
